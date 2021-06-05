@@ -1,7 +1,6 @@
 dependencies = ['torch']
 import torch
 from torch import nn
-import netvlad
 from torchvision import models
 
 from torchvision.models.resnet import resnet18 as _resnet18
