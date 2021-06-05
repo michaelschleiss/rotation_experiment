@@ -11,7 +11,7 @@ import torch.utils.checkpoint as cp
 from e2cnn import gspaces
 from mmcv.cnn import (constant_init, kaiming_init)
 from torch.nn.modules.batchnorm import _BatchNorm
-
+import torch.nn.functional as F
 
 # Set default Orientation=8, .i.e, the group C8
 # One can change it by passing the env Orientation=xx
@@ -653,7 +653,7 @@ class ReResNet(nn.Module):
         self.feat_dim = res_layer[-1].out_channels
 
         # add global average pooling
-        self.gap = nn.AdaptiveAvgPool2d(1)
+        self.gap = nn.AdaptiveAvgPool2d((1,1))
 
     def make_res_layer(self, **kwargs):
         return ResLayer(**kwargs)
@@ -705,22 +705,13 @@ class ReResNet(nn.Module):
         for i, layer_name in enumerate(self.res_layers):
             res_layer = getattr(self, layer_name)
             x = res_layer(x)
-            if i in self.out_indices:
-                outs.append(x)
+            #if i in self.out_indices:
+            #    outs.append(x)
+        out = self.gap(x.tensor)
+        out = out.view(out.size(0), -1)
+        out =  F.normalize(out, p=2, dim=1)
+        return out
 
-        # the following is modified to incorporate global average pooling
-        if len(outs) == 1:
-            inputs = outs[0].tensor
-        else:
-            inputs = tuple(outs)
-        if isinstance(inputs, tuple):
-            outs = tuple([self.gap(x) for x in inputs])
-            outs = tuple(
-                [out.view(x.size(0), -1) for out, x in zip(outs, inputs)])
-        elif isinstance(inputs, torch.Tensor):
-            outs = self.gap(inputs)
-            outs = outs.view(inputs.size(0), -1)
-        return outs
         
 
     def train(self, mode=True):
@@ -731,3 +722,6 @@ class ReResNet(nn.Module):
                 # trick: eval have effect on BatchNorm only
                 if isinstance(m, _BatchNorm):
                     m.eval()
+
+
+
