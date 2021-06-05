@@ -708,8 +708,8 @@ class ReResNet(nn.Module):
             #if i in self.out_indices:
             #    outs.append(x)
         out = self.gap(x.tensor)
-        #out = out.view(out.size(0), -1)
-        out =  F.normalize(out, p=2, dim=1)
+        out = out.view(out.size(0), -1)
+        #out =  F.normalize(out, p=2, dim=1)
         return out
 
         
