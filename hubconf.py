@@ -11,5 +11,5 @@ def equiv_net():
 
     model = ReResNet(depth=50)
     model.load_state_dict(CHECKPOINT, strict = False)
-
+    print(model)
     return model
