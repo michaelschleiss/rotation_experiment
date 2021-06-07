@@ -653,7 +653,11 @@ class ReResNet(nn.Module):
         self.feat_dim = res_layer[-1].out_channels
 
         # add global average pooling
-        self.gap = nn.AdaptiveAvgPool2d((1,1))
+        self.mp = enn.GroupPooling(res_layer[-1].out_type)
+        print("res_layer[-1].out_type")
+        self.gap = nn.AdaptiveAvgPool2d(1)
+        self.gap_pointwise = enn.PointwiseAdaptiveAvgPool(res_layer[-1].out_type,(1))
+    
 
     def make_res_layer(self, **kwargs):
         return ResLayer(**kwargs)
@@ -701,16 +705,18 @@ class ReResNet(nn.Module):
             x = self.norm1(x)
             x = self.relu(x)
         x = self.maxpool(x)
-        outs = []
+
         for i, layer_name in enumerate(self.res_layers):
             res_layer = getattr(self, layer_name)
             x = res_layer(x)
-            #if i in self.out_indices:
-            #    outs.append(x)
-        out = self.gap(x.tensor)
-        out = out.view(out.size(0), -1)
-        out =  F.normalize(out, p=2, dim=1)
-        return out
+       
+        x = self.mp(x)
+        x = self.gap(x.tensor)
+        #x = self.gap_pointwise(x)
+        #x = x.tensor
+        x = x.view(x.size(0), -1)
+        x =  F.normalize(x, p=2, dim=1)
+        return x
 
         
 
